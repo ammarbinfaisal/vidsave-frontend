@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
-const API = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080";
+// Trailing slashes would produce "//api/jobs", which 404s.
+const API = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/+$/, "");
 
 type Platform = "youtube" | "instagram" | "x" | "reddit";
 

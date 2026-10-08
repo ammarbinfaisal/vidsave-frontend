@@ -4,6 +4,7 @@ import Script from "next/script";
 import "./globals.css";
 
 const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID ?? "yujp824cbt";
+const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID ?? "AW-11298597203";
 
 // Editorial grotesque for the interface; an italic serif only for the headline.
 // The pairing works by extreme contrast rather than shared structure.
@@ -40,7 +41,21 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="flex min-h-full flex-col font-sans">
         {children}
-        {/* Microsoft Clarity. Production only, so local dev doesn't pollute recordings. */}
+        {/* Analytics load in production only, so local dev doesn't pollute the data. */}
+        {process.env.NODE_ENV === "production" && (
+          <>
+            <Script
+              src={`https://www.googletagmanager.com/gtag/js?id=${GOOGLE_ADS_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script id="gtag" strategy="afterInteractive">
+              {`window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+              gtag('config', '${GOOGLE_ADS_ID}');`}
+            </Script>
+          </>
+        )}
         {process.env.NODE_ENV === "production" && (
           <Script id="clarity" strategy="afterInteractive">
             {`(function(c,l,a,r,i,t,y){
