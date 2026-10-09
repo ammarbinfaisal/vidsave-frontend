@@ -6,6 +6,7 @@ import "./globals.css";
 
 const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID ?? "yujp824cbt";
 const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID ?? "AW-11298597203";
+const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-7K925NQSX2";
 const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT ?? "ca-pub-6938148406557260";
 
 // Editorial grotesque for the interface; an italic serif only for the headline.
@@ -66,7 +67,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               {`window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
-              gtag('config', '${GOOGLE_ADS_ID}');`}
+              gtag('config', '${GOOGLE_ADS_ID}');
+              gtag('config', '${GA_ID}');`}
             </Script>
             <Script id="clarity" strategy="afterInteractive">
               {`(function(c,l,a,r,i,t,y){
