@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import Downloader, { focusRing } from "@/components/Downloader";
 import JsonLd from "@/components/JsonLd";
 import { Shell } from "@/components/SiteChrome";
-import { GUIDES, LIMITS, getGuide } from "@/lib/guides";
+import { GUIDES, getGuide } from "@/lib/guides";
 import { platformLabel } from "@/lib/platforms";
 import { SITE_URL } from "@/lib/site";
 
@@ -138,8 +138,7 @@ export default async function GuidePage({ params }: PageProps<"/guides/[slug]">)
             </li>
           ))}
           <li className="border-l-2 border-line pl-4">
-            Every download is an MP4 file up to {LIMITS.maxSizeMb} MB, which plays on any phone or
-            computer.
+            Every download is an MP4 file, which plays on any phone or computer.
           </li>
         </ul>
 

@@ -1,43 +1,23 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { PLATFORMS, detectPlatform, platformLabel, type Platform } from "@/lib/platforms";
+import PlaylistView from "@/components/PlaylistView";
+import ProgressBar from "@/components/ProgressBar";
+import {
+  api,
+  focusRing,
+  formatDuration,
+  formatProgress,
+  formatSize,
+  isActive,
+  watchJob,
+  type Job,
+} from "@/lib/api";
+import { PLATFORMS, detectPlatform, platformLabel } from "@/lib/platforms";
 
-// Trailing slashes would produce "//api/jobs", which 404s.
-const API = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").replace(/\/+$/, "");
-
-type Media = {
-  title: string;
-  thumbnail?: string;
-  duration?: number;
-  uploader?: string;
-  platform: Platform;
-  size?: number;
-  download_url: string;
-};
-
-type Job = {
-  id: string;
-  status: "pending" | "running" | "done" | "failed";
-  error?: string;
-  media?: Media;
-};
+export { focusRing };
 
 const STEPS = ["Queued", "Fetching", "Ready"] as const;
-
-function formatDuration(s?: number) {
-  if (!s) return null;
-  const m = Math.floor(s / 60);
-  return `${m}:${String(Math.round(s % 60)).padStart(2, "0")}`;
-}
-
-function formatSize(b?: number) {
-  if (!b) return null;
-  return b > 1e9 ? `${(b / 1e9).toFixed(1)} GB` : `${(b / 1e6).toFixed(1)} MB`;
-}
-
-export const focusRing =
-  "focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-action";
 
 export default function Downloader({
   placeholder = "https://youtube.com/watch?v=…",
@@ -48,49 +28,33 @@ export default function Downloader({
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
-  const pollRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const stopRef = useRef<(() => void) | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const detected = detectPlatform(url);
-  const working = submitting || job?.status === "pending" || job?.status === "running";
+  const working = submitting || isActive(job?.status);
   const done = job?.status === "done" && !!job.media;
+  const playlist = job?.status === "done" ? job.playlist : undefined;
   const step = submitting || job?.status === "pending" ? 0 : job?.status === "running" ? 1 : 2;
 
-  useEffect(() => () => {
-    if (pollRef.current) clearTimeout(pollRef.current);
-  }, []);
+  useEffect(() => () => stopRef.current?.(), []);
 
-  function poll(id: string, delay = 1000) {
-    pollRef.current = setTimeout(async () => {
-      try {
-        const res = await fetch(`${API}/api/jobs/${id}`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.detail ?? "Lost track of this download");
-        setJob(data);
-        if (data.status === "pending" || data.status === "running") {
-          poll(id, Math.min(delay * 1.5, 5000));
-        }
-      } catch (e) {
-        setError((e as Error).message);
-      }
-    }, delay);
+  function watch(id: string) {
+    stopRef.current?.();
+    stopRef.current = watchJob(id, setJob, setError);
   }
 
   async function start(link: string) {
-    if (pollRef.current) clearTimeout(pollRef.current);
+    stopRef.current?.();
+    stopRef.current = null;
     setError(null);
     setJob(null);
     setSubmitting(true);
     try {
-      const res = await fetch(`${API}/api/jobs`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: link }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.detail ?? "Something went wrong");
+      const data = await api<Job>("/api/jobs", { url: link });
       setJob(data);
-      if (data.status === "pending" || data.status === "running") poll(data.id);
+      // Playlists stay watched after listing, so their entries update live.
+      if (isActive(data.status) || data.kind === "playlist") watch(data.id);
     } catch (e) {
       setError(
         e instanceof TypeError ? "Can't reach the server. Try again in a moment." : (e as Error).message,
@@ -114,6 +78,8 @@ export default function Downloader({
   }
 
   function reset() {
+    stopRef.current?.();
+    stopRef.current = null;
     setJob(null);
     setError(null);
     setUrl("");
@@ -131,7 +97,7 @@ export default function Downloader({
         }}
       >
         <label htmlFor="url" className="text-meta font-medium uppercase tracking-[0.08em] text-muted">
-          Video link
+          Video or playlist link
         </label>
         <div className="mt-2 flex flex-col gap-3 sm:flex-row">
           <div className="flex min-w-0 flex-1 items-center rounded-lg border border-line bg-paper shadow-(--shadow) transition-colors focus-within:border-action">
@@ -162,7 +128,7 @@ export default function Downloader({
             disabled={working}
             className={`min-h-12 rounded-lg px-6 font-semibold transition-colors active:translate-y-px disabled:cursor-wait disabled:opacity-60 ${
               // Once a file is ready, Download is the one primary action on the page.
-              done
+              done || playlist
                 ? "border border-line text-ink hover:bg-sunk"
                 : "bg-action text-action-ink hover:bg-action-hover"
             } ${focusRing}`}
@@ -205,10 +171,12 @@ export default function Downloader({
                   }`}
                 />
                 {label}
+                {i === 1 && i === step && formatProgress(job?.progress)}
               </li>
             ))}
           </ol>
         )}
+        {working && job?.progress !== undefined && <ProgressBar value={job.progress} className="mt-4" />}
 
         {failure && (
           <div className="animate-rise rounded-lg bg-error-bg px-4 py-3 text-error" role="alert">
@@ -216,6 +184,8 @@ export default function Downloader({
             <p className="mt-1 text-meta leading-relaxed">{failure}</p>
           </div>
         )}
+
+        {playlist && job && <PlaylistView id={job.id} playlist={playlist} onUpdate={setJob} onReset={reset} />}
 
         {done && job?.media && (
           <article className="animate-rise border-t border-line pt-6">

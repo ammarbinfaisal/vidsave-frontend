@@ -20,8 +20,7 @@ export type Guide = {
 // Limits enforced by the backend (app/config.py). Keep these in sync.
 export const LIMITS = {
   maxHeight: "1080p",
-  maxMinutes: 30,
-  maxSizeMb: 500,
+  maxPlaylistVideos: 500,
 };
 
 const genericSteps = (what: string, share: string) => [
@@ -72,16 +71,18 @@ export const GUIDES: Guide[] = [
       "youtu.be/…",
       "youtube.com/shorts/…",
       "m.youtube.com/watch?v=…",
+      "youtube.com/playlist?list=…",
     ],
     notes: [
       `Videos are saved in the best quality available up to ${LIMITS.maxHeight}, as MP4 with sound.`,
-      `Videos longer than ${LIMITS.maxMinutes} minutes, live streams, private videos and members-only videos can't be saved.`,
+      "There's no length limit. Long videos just take longer to prepare, and you can watch the progress.",
+      "Live streams, private videos and members-only videos can't be saved.",
       "Timestamps in the link (like &t=90) are ignored; you always get the whole video.",
     ],
     faqs: [
       {
         q: "Can I download a whole YouTube playlist?",
-        a: "Not at the moment. vidsave saves one video at a time. If you paste a playlist link that also contains a video, you'll get that video.",
+        a: `Yes. Paste a playlist link (youtube.com/playlist?list=…) and vidsave lists its videos, up to ${LIMITS.maxPlaylistVideos}. Save them one at a time or tap Save all. A link to a video inside a playlist (watch?v=…&list=…) saves just that video.`,
       },
       {
         q: "Why does a YouTube video sometimes fail?",

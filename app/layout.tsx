@@ -8,7 +8,7 @@ import "./globals.css";
 const CLARITY_ID = process.env.NEXT_PUBLIC_CLARITY_ID ?? "yujp824cbt";
 const GOOGLE_ADS_ID = process.env.NEXT_PUBLIC_GOOGLE_ADS_ID ?? "AW-11298597203";
 const GA_ID = process.env.NEXT_PUBLIC_GA_ID ?? "G-7K925NQSX2";
-const ADSENSE_CLIENT = process.env.NEXT_PUBLIC_ADSENSE_CLIENT ?? "ca-pub-6938148406557260";
+const APITINY_SITE_ID = process.env.NEXT_PUBLIC_APITINY_SITE_ID ?? "6ac9e49530bf8787784530f9";
 
 // Editorial grotesque for the interface; an italic serif only for the headline.
 // The pairing works by extreme contrast rather than shared structure.
@@ -56,8 +56,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         {process.env.NODE_ENV === "production" && (
           <>
             <Script
-              src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
-              crossOrigin="anonymous"
+              src="https://cdn.apitiny.net/scripts/v2.0/main.js"
+              data-site-id={APITINY_SITE_ID}
+              data-test-mode="false"
               strategy="afterInteractive"
             />
             <Script
