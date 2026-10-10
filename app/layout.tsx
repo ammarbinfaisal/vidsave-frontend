@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Instrument_Serif, Schibsted_Grotesk } from "next/font/google";
 import Script from "next/script";
+import ClarityInit from "@/components/ClarityInit";
 import { SITE_URL } from "@/lib/site";
 import "./globals.css";
 
@@ -70,13 +71,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
               gtag('config', '${GOOGLE_ADS_ID}');
               gtag('config', '${GA_ID}');`}
             </Script>
-            <Script id="clarity" strategy="afterInteractive">
-              {`(function(c,l,a,r,i,t,y){
-                c[a]=c[a]||function(){(c[a].q=c[a].q||[]).push(arguments)};
-                t=l.createElement(r);t.async=1;t.src="https://www.clarity.ms/tag/"+i;
-                y=l.getElementsByTagName(r)[0];y.parentNode.insertBefore(t,y);
-              })(window, document, "clarity", "script", "${CLARITY_ID}");`}
-            </Script>
+            <ClarityInit projectId={CLARITY_ID} />
           </>
         )}
       </body>
