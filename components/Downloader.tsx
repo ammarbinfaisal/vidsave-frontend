@@ -1,19 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import MediaResult from "@/components/MediaResult";
 import PlaylistView from "@/components/PlaylistView";
 import ProgressBar from "@/components/ProgressBar";
-import {
-  api,
-  focusRing,
-  formatDuration,
-  formatProgress,
-  formatSize,
-  isActive,
-  watchJob,
-  type Job,
-} from "@/lib/api";
-import { PLATFORMS, detectPlatform, platformLabel } from "@/lib/platforms";
+import { api, focusRing, formatProgress, isActive, watchJob, type Job } from "@/lib/api";
+import { PLATFORMS, detectPlatform } from "@/lib/platforms";
 
 export { focusRing };
 
@@ -25,6 +17,8 @@ export default function Downloader({
   placeholder?: string;
 }) {
   const [url, setUrl] = useState("");
+  // Audio only: the server saves the soundtrack as an MP3.
+  const [audio, setAudio] = useState(false);
   const [job, setJob] = useState<Job | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -39,9 +33,9 @@ export default function Downloader({
 
   useEffect(() => () => stopRef.current?.(), []);
 
-  function watch(id: string) {
+  function watch(id: string, asAudio: boolean) {
     stopRef.current?.();
-    stopRef.current = watchJob(id, setJob, setError);
+    stopRef.current = watchJob(id, asAudio, setJob, setError);
   }
 
   async function start(link: string) {
@@ -51,10 +45,10 @@ export default function Downloader({
     setJob(null);
     setSubmitting(true);
     try {
-      const data = await api<Job>("/api/jobs", { url: link });
+      const data = await api<Job>("/api/jobs", { url: link, audio });
       setJob(data);
       // Playlists stay watched after listing, so their entries update live.
-      if (isActive(data.status) || data.kind === "playlist") watch(data.id);
+      if (isActive(data.status) || data.kind === "playlist") watch(data.id, audio);
     } catch (e) {
       setError(
         e instanceof TypeError ? "Can't reach the server. Try again in a moment." : (e as Error).message,
@@ -96,9 +90,31 @@ export default function Downloader({
           start(url);
         }}
       >
-        <label htmlFor="url" className="text-meta font-medium uppercase tracking-[0.08em] text-muted">
-          Video or playlist link
-        </label>
+        <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+          <label htmlFor="url" className="text-meta font-medium uppercase tracking-[0.08em] text-muted">
+            Link to a video, post or profile
+          </label>
+          <div role="radiogroup" aria-label="What to save" className="flex rounded-md bg-sunk p-0.5 text-meta">
+            {[
+              { value: false, label: "Video" },
+              { value: true, label: "Audio only" },
+            ].map((o) => (
+              <button
+                key={o.label}
+                type="button"
+                role="radio"
+                aria-checked={audio === o.value}
+                disabled={working}
+                onClick={() => setAudio(o.value)}
+                className={`min-h-9 rounded px-3 font-medium transition-colors disabled:cursor-wait ${
+                  audio === o.value ? "bg-paper text-ink shadow-(--shadow)" : "text-muted hover:text-ink"
+                } ${focusRing}`}
+              >
+                {o.label}
+              </button>
+            ))}
+          </div>
+        </div>
         <div className="mt-2 flex flex-col gap-3 sm:flex-row">
           <div className="flex min-w-0 flex-1 items-center rounded-lg border border-line bg-paper shadow-(--shadow) transition-colors focus-within:border-action">
             <input
@@ -133,7 +149,7 @@ export default function Downloader({
                 : "bg-action text-action-ink hover:bg-action-hover"
             } ${focusRing}`}
           >
-            {working ? "Saving…" : "Save video"}
+            {working ? "Saving…" : audio ? "Save audio" : "Save"}
           </button>
         </div>
 
@@ -185,52 +201,11 @@ export default function Downloader({
           </div>
         )}
 
-        {playlist && job && <PlaylistView id={job.id} playlist={playlist} onUpdate={setJob} onReset={reset} />}
-
-        {done && job?.media && (
-          <article className="animate-rise border-t border-line pt-6">
-            <div className="flex gap-4">
-              {job.media.thumbnail && (
-                // Platform thumbnails come from many hosts and expire, so skip next/image.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={job.media.thumbnail}
-                  alt=""
-                  referrerPolicy="no-referrer"
-                  className="aspect-[3/4] w-24 shrink-0 rounded-md bg-sunk object-cover sm:w-28"
-                />
-              )}
-              <div className="min-w-0">
-                <p className="line-clamp-3 text-lead leading-snug font-semibold">{job.media.title}</p>
-                <p className="mt-2 text-meta text-muted">
-                  {[
-                    platformLabel(job.media.platform),
-                    job.media.uploader,
-                    formatDuration(job.media.duration),
-                    formatSize(job.media.size),
-                  ]
-                    .filter(Boolean)
-                    .join(" · ")}
-                </p>
-              </div>
-            </div>
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <a
-                href={job.media.download_url}
-                className={`inline-flex min-h-12 items-center justify-center rounded-lg bg-action px-6 font-semibold text-action-ink transition-colors hover:bg-action-hover ${focusRing}`}
-              >
-                Download MP4
-              </a>
-              <button
-                type="button"
-                onClick={reset}
-                className={`min-h-12 rounded-lg px-4 font-medium text-muted hover:text-ink ${focusRing}`}
-              >
-                Save another
-              </button>
-            </div>
-          </article>
+        {playlist && job && (
+          <PlaylistView id={job.id} playlist={playlist} audio={audio} onUpdate={setJob} onReset={reset} />
         )}
+
+        {done && job?.media && <MediaResult media={job.media} onReset={reset} />}
       </section>
     </div>
   );

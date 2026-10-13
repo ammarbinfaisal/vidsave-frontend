@@ -25,16 +25,16 @@ const serif = Instrument_Serif({
 });
 
 const DESCRIPTION =
-  "Paste a link from YouTube, Instagram, TikTok, X, Reddit or Vimeo and save the video as an MP4. Free, no sign-up.";
+  "Paste a link from YouTube, Instagram, TikTok, X, Reddit, Facebook, Threads, Vimeo or Dailymotion and save the video as MP4, the audio as MP3, or the photos. Free, no sign-up.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "vidsave: Download YouTube, Instagram, TikTok, X, Reddit and Vimeo videos",
-    template: "%s | vidsave",
+    default: "Save Video: Download YouTube, Instagram, TikTok, X, Reddit and Vimeo videos",
+    template: "%s | vidsave.app",
   },
   description: DESCRIPTION,
-  openGraph: { siteName: "vidsave", type: "website", description: DESCRIPTION },
+  openGraph: { siteName: "vidsave.app", type: "website", description: DESCRIPTION },
 };
 
 export const viewport: Viewport = {

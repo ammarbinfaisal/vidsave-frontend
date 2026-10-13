@@ -18,11 +18,14 @@ const smallButton = `inline-flex min-h-11 items-center justify-center rounded-md
 export default function PlaylistView({
   id,
   playlist,
+  audio,
   onUpdate,
   onReset,
 }: {
   id: string;
   playlist: Playlist;
+  /** Save entries as MP3s. Fixed for the life of this view. */
+  audio: boolean;
   onUpdate: (job: Job) => void;
   onReset: () => void;
 }) {
@@ -36,6 +39,8 @@ export default function PlaylistView({
   const saving = useRef(false);
 
   const { entries } = playlist;
+  const profile = playlist.type === "profile";
+  const noun = profile ? "posts" : "videos";
   const ready = entries.filter((e) => e.status === "done").length;
   const remaining = entries.filter((e) => e.status !== "done" && !wanted.has(e.id));
   const waiting = (e: PlaylistEntry) => wanted.has(e.id) && !sent.has(e.id) && e.status === "idle";
@@ -46,7 +51,7 @@ export default function PlaylistView({
     if (!next.length || inflight >= playlist.max_inflight || saving.current) return;
 
     saving.current = true;
-    api<Job>(`/api/jobs/${id}/save`, { ids: next.map((e) => e.id) })
+    api<Job>(`/api/jobs/${id}/save`, { ids: next.map((e) => e.id), audio })
       .then((job) => {
         setError(null);
         const taken = job.playlist?.entries.filter((e) => e.status !== "idle").map((e) => e.id) ?? [];
@@ -58,7 +63,7 @@ export default function PlaylistView({
         saving.current = false;
       });
     // eslint-disable-next-line react-hooks/exhaustive-deps -- waiting() only reads wanted/sent
-  }, [entries, wanted, sent, id, playlist.max_inflight, onUpdate]);
+  }, [entries, wanted, sent, id, audio, playlist.max_inflight, onUpdate]);
 
   const want = (ids: string[]) => {
     setWanted((w) => new Set([...w, ...ids]));
@@ -68,13 +73,13 @@ export default function PlaylistView({
   return (
     <article className="animate-rise border-t border-line pt-6">
       <p className="text-meta font-medium uppercase tracking-[0.08em] text-muted">
-        {["Playlist", playlist.uploader].filter(Boolean).join(" · ")}
+        {profile ? "Latest posts" : ["Playlist", playlist.uploader].filter(Boolean).join(" · ")}
       </p>
       <p className="mt-1 line-clamp-2 text-lead leading-snug font-semibold">{playlist.title}</p>
       <p className="mt-2 text-meta text-muted">
         {playlist.count && playlist.count > entries.length
-          ? `First ${entries.length} of ${playlist.count} videos`
-          : `${entries.length} videos`}
+          ? `First ${entries.length} of ${playlist.count} ${noun}`
+          : `${entries.length} ${noun}`}
         {ready > 0 && ` · ${ready} ready`}
       </p>
 

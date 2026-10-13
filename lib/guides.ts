@@ -141,10 +141,17 @@ export const GUIDES: Guide[] = [
       },
       { where: "On instagram.com", steps: ["Open the post and copy the address from the address bar."] },
     ],
-    linkFormats: ["instagram.com/p/…", "instagram.com/reel/…", "instagram.com/tv/…"],
+    linkFormats: [
+      "instagram.com/p/…",
+      "instagram.com/reel/…",
+      "instagram.com/tv/…",
+      "instagram.com/<username> (latest posts)",
+    ],
     notes: [
       "Only public accounts work. Posts from private accounts can't be fetched without logging in, and vidsave never asks for your password.",
-      "If a post has several videos (a carousel), the first video is saved.",
+      "Carousels are saved whole: every photo and video, one by one or all together as a ZIP.",
+      "Photo posts work too. Photos are saved as JPG.",
+      "Paste a profile link to see the account's latest posts and save the ones you want.",
       "Stories and highlights aren't supported.",
     ],
     faqs: [
@@ -267,7 +274,8 @@ export const GUIDES: Guide[] = [
     linkFormats: ["reddit.com/r/…/comments/…", "reddit.com/r/…/s/… (app share links)", "redd.it/…", "old.reddit.com/…"],
     notes: [
       "The video's sound is merged in automatically.",
-      "Only videos uploaded to Reddit work. If a post links to YouTube or another site, open that link and paste it here instead.",
+      "Photo posts and galleries work too: save each image, or the whole gallery as a ZIP.",
+      "Only media uploaded to Reddit works. If a post links to YouTube or another site, open that link and paste it here instead.",
       "Posts from private or quarantined subreddits can't be saved.",
     ],
     faqs: [

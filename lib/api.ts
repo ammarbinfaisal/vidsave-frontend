@@ -5,6 +5,18 @@ export const API = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8080").
 
 export type Status = "pending" | "running" | "done" | "failed";
 
+export type MediaKind = "video" | "audio" | "image" | "zip";
+
+/** One file of a post with several (carousel, gallery, story reel). */
+export type MediaItem = {
+  kind: Exclude<MediaKind, "zip">;
+  ext: string;
+  size?: number;
+  duration?: number;
+  thumbnail?: string;
+  download_url: string;
+};
+
 export type Media = {
   title: string;
   thumbnail?: string;
@@ -12,6 +24,11 @@ export type Media = {
   uploader?: string;
   platform: Platform;
   size?: number;
+  /** Older cached results predate these two; treat them as MP4 video. */
+  ext?: string;
+  kind?: MediaKind;
+  /** Set when the post has several files; download_url is then a ZIP of all. */
+  items?: MediaItem[];
   download_url: string;
 };
 
@@ -28,6 +45,8 @@ export type PlaylistEntry = {
 };
 
 export type Playlist = {
+  /** "profile" lists an Instagram account's latest posts. */
+  type?: "playlist" | "profile";
   title: string;
   uploader?: string;
   platform: Platform;
@@ -70,9 +89,12 @@ const isFinal = (j: Job) => j.kind !== "playlist" && !isActive(j.status);
  */
 export function watchJob(
   id: string,
+  audio: boolean,
   onUpdate: (job: Job) => void,
   onError: (message: string) => void,
 ): () => void {
+  // Playlist entries report the saves of the chosen mode: MP3s or videos.
+  const query = audio ? "?audio=true" : "";
   let stopped = false;
   let ws: WebSocket | null = null;
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -88,7 +110,7 @@ export function watchJob(
     timer = setTimeout(async () => {
       if (stopped) return;
       try {
-        update(await api<Job>(`/api/jobs/${id}`));
+        update(await api<Job>(`/api/jobs/${id}${query}`));
         if (!stopped) poll(Math.min(delay * 1.5, 4000));
       } catch (e) {
         onError((e as Error).message || "Lost track of this download");
@@ -97,7 +119,7 @@ export function watchJob(
   };
 
   const connect = () => {
-    ws = new WebSocket(`${API.replace(/^http/, "ws")}/api/jobs/${id}/ws`);
+    ws = new WebSocket(`${API.replace(/^http/, "ws")}/api/jobs/${id}/ws${query}`);
     ws.onmessage = (ev) => {
       failures = 0;
       update(JSON.parse(ev.data));
@@ -129,6 +151,9 @@ export function formatSize(b?: number) {
   if (!b) return null;
   return b > 1e9 ? `${(b / 1e9).toFixed(1)} GB` : `${(b / 1e6).toFixed(1)} MB`;
 }
+
+/** "Download MP4", "Download MP3", "Download ZIP"… */
+export const downloadLabel = (ext = "mp4") => `Download ${ext.toUpperCase()}`;
 
 export const formatProgress = (p?: number) => (p === undefined ? "" : ` ${Math.floor(p * 100)}%`);
 

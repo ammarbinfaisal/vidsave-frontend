@@ -1,4 +1,13 @@
-export type Platform = "youtube" | "instagram" | "tiktok" | "x" | "reddit" | "vimeo";
+export type Platform =
+  | "youtube"
+  | "instagram"
+  | "tiktok"
+  | "x"
+  | "reddit"
+  | "facebook"
+  | "threads"
+  | "vimeo"
+  | "dailymotion";
 
 export const PLATFORMS: { id: Platform; label: string; hosts: RegExp }[] = [
   { id: "youtube", label: "YouTube", hosts: /(^|\.)(youtube\.com|youtu\.be)$/ },
@@ -6,7 +15,10 @@ export const PLATFORMS: { id: Platform; label: string; hosts: RegExp }[] = [
   { id: "tiktok", label: "TikTok", hosts: /(^|\.)tiktok\.com$/ },
   { id: "x", label: "X", hosts: /(^|\.)(x\.com|twitter\.com)$/ },
   { id: "reddit", label: "Reddit", hosts: /(^|\.)(reddit\.com|redd\.it)$/ },
+  { id: "facebook", label: "Facebook", hosts: /(^|\.)(facebook\.com|fb\.watch)$/ },
+  { id: "threads", label: "Threads", hosts: /(^|\.)threads\.(net|com)$/ },
   { id: "vimeo", label: "Vimeo", hosts: /(^|\.)vimeo\.com$/ },
+  { id: "dailymotion", label: "Dailymotion", hosts: /(^|\.)(dailymotion\.com|dai\.ly)$/ },
 ];
 
 export function detectPlatform(url: string): Platform | null {
